@@ -15,7 +15,7 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 public class AuthUserArgumentResolver implements HandlerMethodArgumentResolver {
 
     @Override
-    public boolean supportsParameter(MethodParameter parameter) {
+    public boolean supportsParameter(MethodParameter parameter) {// 신분증 확인 및 정보 뒤져서 컨트롤러 메서드 파라미터로 넣어줌
         boolean hasAuthAnnotation = parameter.getParameterAnnotation(Auth.class) != null;
         boolean isAuthUserType = parameter.getParameterType().equals(AuthUser.class);
 
@@ -34,13 +34,20 @@ public class AuthUserArgumentResolver implements HandlerMethodArgumentResolver {
             NativeWebRequest webRequest,
             @Nullable WebDataBinderFactory binderFactory
     ) {
+        // 1. request(주머니) 가져오기
         HttpServletRequest request = (HttpServletRequest) webRequest.getNativeRequest();
 
-        // JwtFilter 에서 set 한 userId, email, userRole 값을 가져옴
+        // 2. JwtFilter(주머니) 에서 set 한 userId, email, userRole 정보 꺼내기
         Long userId = (Long) request.getAttribute("userId");
         String email = (String) request.getAttribute("email");
         UserRole userRole = UserRole.of((String) request.getAttribute("userRole"));
 
+        // 3. userId가 null인지 체크하기 **삭제된 부분**
+        if(userId == null){
+            throw new AuthException("인증 정보가 없습니다.");
+        }
+
+        // 4. 검사 끝나고 AuthUser에 담아 반환하기
         return new AuthUser(userId, email, userRole);
     }
 }
